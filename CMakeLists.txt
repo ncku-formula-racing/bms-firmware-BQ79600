@@ -15,7 +15,7 @@ set(CMAKE_C_EXTENSIONS ON)
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
 # Set the project name
@@ -36,6 +36,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
+add_subdirectory(SEGGER_RTT)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -65,4 +66,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
 
     # Add user defined libraries
+    segger_rtt
 )
