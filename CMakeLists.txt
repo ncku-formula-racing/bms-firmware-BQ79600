@@ -37,6 +37,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(SEGGER_RTT)
+add_subdirectory(BQ79600)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -67,4 +68,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
     segger_rtt
+    BQ79600
 )
