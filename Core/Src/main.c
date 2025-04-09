@@ -67,6 +67,17 @@ static void MX_CAN_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
+  static bq79600_t *instance = NULL;
+  instance = open_bq79600_instance(0);
+  if (instance == NULL)
+    instance = open_bq79600_instance(0);
+  instance->rx_len = size;
+  bq79600_rx_callback(instance);
+  bms_run();
+  HAL_UARTEx_ReceiveToIdle_IT(&huart1, instance->rx_buf,
+                              sizeof(instance->rx_buf));
+}
 /* USER CODE END 0 */
 
 /**
@@ -112,23 +123,25 @@ int main(void) {
   bq79600_wakeup(bms_instance);
   HAL_UARTEx_ReceiveToIdle_IT(&huart1, bms_instance->rx_buf,
                               sizeof(bms_instance->rx_buf));
+  HAL_Delay(10);
+
+  uint8_t control1;
+  bq79600_read_reg(bms_instance, 0x00, CONTROL1, &control1);
+  control1 |= 0x20;
+  bq79600_write_reg(bms_instance, 0x00, CONTROL1, &control1, 1);
+  SEGGER_RTT_printf(0, "Writing Control1: %02X\n", control1);
+  HAL_Delay(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
-    bms_run();
-    HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    uint8_t data = 0x00;
-    bq79600_construct_command(bms_instance, SINGLE_DEVICE_READ, 0x00, DIR0_ADDR,
-                              1, &data);
-    for (int i = 0; i < bms_instance->tx_len; i++)
-      SEGGER_RTT_printf(0, "%02X ", bms_instance->tx_buf[i]);
-    SEGGER_RTT_printf(0, "\n");
-    HAL_UART_Transmit_DMA(&huart1, bms_instance->tx_buf, bms_instance->tx_len);
+    bq79600_read_reg(bms_instance, 0x00, CONTROL1, &control1);
+    SEGGER_RTT_printf(0, "Control1: %02X\n", bms_instance->rx_buf[4]);
+    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }

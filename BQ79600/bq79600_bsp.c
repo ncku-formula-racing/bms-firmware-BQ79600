@@ -33,10 +33,21 @@ void bq79600_bsp_wakeup(bq79600_t *instance) {
 void bq79600_bsp_uart_init(bq79600_t *instance) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   GPIO_InitStruct.Pin = 1 << instance->rx_pin;
-  GPIO_InitStruct.Mode =GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init((GPIO_TypeDef *)instance->rx_port, &GPIO_InitStruct);
   MX_USART1_UART_Init();
+}
+
+void bq79600_bsp_ready(bq79600_t *instance) {
+  /* Change here to non-blocking mode if using RTOS */
+  while (instance->ready == 0)
+    ;
+}
+
+extern UART_HandleTypeDef huart1;
+void bq79600_bsp_uart_tx(bq79600_t *instance) {
+  HAL_UART_Transmit_DMA(&huart1, instance->tx_buf, instance->tx_len);
 }
 
 uint32_t bq79600_bsp_crc(uint8_t *buf, size_t len) {
