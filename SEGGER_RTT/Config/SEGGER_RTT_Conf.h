@@ -130,8 +130,7 @@ Revision: $Rev: 24316 $
  * on Cortex-A devices with MMU.
  */
 #ifndef SEGGER_RTT_MEMCPY_USE_BYTELOOP
-#define SEGGER_RTT_MEMCPY_USE_BYTELOOP \
-  0  // 0: Use memcpy/SEGGER_RTT_MEMCPY, 1: Use a simple byte-loop
+#define SEGGER_RTT_MEMCPY_USE_BYTELOOP 0  // 0: Use memcpy/SEGGER_RTT_MEMCPY, 1: Use a simple byte-loop
 #endif
 //
 // Example definition of SEGGER_RTT_MEMCPY to external memcpy with GCC
@@ -173,8 +172,8 @@ Revision: $Rev: 24316 $
  *       RTT lock configuration for SEGGER Embedded Studio,
  *       Rowley CrossStudio and GCC
  */
-#if ((defined(__SES_ARM) || defined(__SES_RISCV) ||                            \
-      defined(__CROSSWORKS_ARM) || defined(__GNUC__) || defined(__clang__)) && \
+#if ((defined(__SES_ARM) || defined(__SES_RISCV) || defined(__CROSSWORKS_ARM) || defined(__GNUC__) || \
+      defined(__clang__)) &&                                                                          \
      !defined(__CC_ARM) && !defined(WIN32))
 #if (defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_8M_BASE__))
 #define SEGGER_RTT_LOCK()                \
@@ -191,8 +190,7 @@ Revision: $Rev: 24316 $
 #define SEGGER_RTT_UNLOCK()                                                    \
   __asm volatile("msr   primask, %0  \n\t" : : "r"(_SEGGER_RTT__LockState) :); \
   }
-#elif (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__) || \
-       defined(__ARM_ARCH_8M_MAIN__))
+#elif (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__) || defined(__ARM_ARCH_8M_MAIN__))
 #ifndef SEGGER_RTT_MAX_INTERRUPT_PRIORITY
 #define SEGGER_RTT_MAX_INTERRUPT_PRIORITY (0x20)
 #endif
@@ -295,8 +293,7 @@ Revision: $Rev: 24316 $
 #define SEGGER_RTT_UNLOCK()              \
   __set_BASEPRI(_SEGGER_RTT__LockState); \
   }
-#elif (defined(__ARM7A__) && (__CORE__ == __ARM7A__)) || \
-    (defined(__ARM7R__) && (__CORE__ == __ARM7R__))
+#elif (defined(__ARM7A__) && (__CORE__ == __ARM7A__)) || (defined(__ARM7R__) && (__CORE__ == __ARM7R__))
 #define SEGGER_RTT_LOCK()                \
   {                                      \
     unsigned int _SEGGER_RTT__LockState; \
@@ -415,8 +412,7 @@ Revision: $Rev: 24316 $
 #define SEGGER_RTT_LOCK()                \
   {                                      \
     unsigned int _SEGGER_RTT__LockState; \
-    _SEGGER_RTT__LockState =             \
-        _set_interrupt_priority(SEGGER_RTT_MAX_INTERRUPT_PRIORITY);
+    _SEGGER_RTT__LockState = _set_interrupt_priority(SEGGER_RTT_MAX_INTERRUPT_PRIORITY);
 
 #define SEGGER_RTT_UNLOCK()                        \
   _set_interrupt_priority(_SEGGER_RTT__LockState); \

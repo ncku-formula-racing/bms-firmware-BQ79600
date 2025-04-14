@@ -13,8 +13,7 @@ static inline void __delayus(uint32_t us) {
   static uint32_t k;
   __disable_irq();
   __HAL_TIM_SET_COUNTER(&htim1, 0);
-  while ((k = __HAL_TIM_GET_COUNTER(&htim1)) < us)
-    us -= k > period ? period : 0;
+  while ((k = __HAL_TIM_GET_COUNTER(&htim1)) < us) us -= k > period ? period : 0;
   __enable_irq();
 }
 
@@ -41,8 +40,7 @@ void bq79600_bsp_uart_init(bq79600_t *instance) {
 
 void bq79600_bsp_ready(bq79600_t *instance) {
   /* Change here to non-blocking mode if using RTOS */
-  while (instance->ready == 0)
-    ;
+  while (instance->ready == 0);
 }
 
 extern UART_HandleTypeDef huart1;

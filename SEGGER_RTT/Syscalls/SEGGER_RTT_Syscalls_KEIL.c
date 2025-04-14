@@ -184,8 +184,7 @@ int _sys_close(FILEHANDLE hFile) {
  *    Number of bytes *not* written to the file/device
  *
  */
-int _sys_write(FILEHANDLE hFile, const unsigned char* pBuffer,
-               unsigned NumBytes, int Mode) {
+int _sys_write(FILEHANDLE hFile, const unsigned char* pBuffer, unsigned NumBytes, int Mode) {
   int r = 0;
 
   (void)Mode;
@@ -279,8 +278,7 @@ long _sys_flen(FILEHANDLE hFile) {
  *    Number of bytes read from the file/device
  *
  */
-int _sys_read(FILEHANDLE hFile, unsigned char* pBuffer, unsigned NumBytes,
-              int Mode) {
+int _sys_read(FILEHANDLE hFile, unsigned char* pBuffer, unsigned NumBytes, int Mode) {
   (void)hFile;
   (void)pBuffer;
   (void)NumBytes;
@@ -376,8 +374,7 @@ char* _sys_command_string(char* cmd, int len) {
  */
 void _sys_exit(int ReturnCode) {
   (void)ReturnCode;
-  while (1)
-    ;  // Not implemented
+  while (1);  // Not implemented
 }
 
 #if __ARMCC_VERSION >= 5000000

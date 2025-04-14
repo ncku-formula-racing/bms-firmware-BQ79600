@@ -56,8 +56,7 @@ Revision: $Rev: 24316 $
 // LowLevelIOInterface.h shall be used instead. To not break any compatibility
 // with older compiler versions, we have a version check in here.
 //
-#if ((defined __ICCARM__) && (__VER__ >= 8000000)) || \
-    ((defined __ICCRX__) && (__VER__ >= 400))
+#if ((defined __ICCARM__) && (__VER__ >= 8000000)) || ((defined __ICCRX__) && (__VER__ >= 400))
 #include <LowLevelIOInterface.h>
 #else
 #include <yfuns.h>
