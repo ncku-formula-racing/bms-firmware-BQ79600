@@ -19,6 +19,8 @@ void bq79600_construct_command(bq79600_t *instance, REQ_TYPE req_type,
       *tx_buf++ = data[i];
   else
     *tx_buf++ = data_len - 1;
+  if (req_type >= 2)
+    data_len = 0;
   uint16_t crc = bq79600_bsp_crc(instance->tx_buf, 4 + data_len);
   *tx_buf++ = crc & 0xFF;
   *tx_buf++ = (crc >> 8) & 0xFF;
