@@ -107,8 +107,7 @@ Revision: $Rev: 24316 $
  *
  **********************************************************************
  */
-int SEGGER_RTT_vprintf(unsigned BufferIndex, const char *sFormat,
-                       va_list *pParamList);
+int SEGGER_RTT_vprintf(unsigned BufferIndex, const char *sFormat, va_list *pParamList);
 
 /*********************************************************************
  *
@@ -133,8 +132,7 @@ int printf(const char *fmt, ...) {
   return n;
 }
 
-#elif PRINTF_BUFFER_SIZE == \
-    0  // Use standard library formatting with character-wise output
+#elif PRINTF_BUFFER_SIZE == 0  // Use standard library formatting with character-wise output
 
 /*********************************************************************
  *

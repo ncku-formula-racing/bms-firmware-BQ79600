@@ -40,8 +40,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define bms_fault(state)                                                       \
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define bms_run() HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13)
 /* USER CODE END PM */
 
@@ -70,13 +69,11 @@ static void MX_CAN_Init(void);
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
   static bq79600_t *instance = NULL;
   instance = open_bq79600_instance(0);
-  if (instance == NULL)
-    instance = open_bq79600_instance(0);
+  if (instance == NULL) instance = open_bq79600_instance(0);
   instance->rx_len = size;
   bq79600_rx_callback(instance);
   bms_run();
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, instance->rx_buf,
-                              sizeof(instance->rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart1, instance->rx_buf, sizeof(instance->rx_buf));
 }
 /* USER CODE END 0 */
 
@@ -85,7 +82,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
  * @retval int
  */
 int main(void) {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -121,8 +117,7 @@ int main(void) {
   bms_instance->tx_pin = 10;
 
   bq79600_wakeup(bms_instance);
-  HAL_UARTEx_ReceiveToIdle_IT(&huart1, bms_instance->rx_buf,
-                              sizeof(bms_instance->rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart1, bms_instance->rx_buf, sizeof(bms_instance->rx_buf));
   HAL_Delay(10);
 
   uint8_t control1;
@@ -170,8 +165,8 @@ void SystemClock_Config(void) {
 
   /** Initializes the CPU, AHB and APB buses clocks
    */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
-                                RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType =
+      RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -188,7 +183,6 @@ void SystemClock_Config(void) {
  * @retval None
  */
 static void MX_CAN_Init(void) {
-
   /* USER CODE BEGIN CAN_Init 0 */
 
   /* USER CODE END CAN_Init 0 */
@@ -222,7 +216,6 @@ static void MX_CAN_Init(void) {
  * @retval None
  */
 void MX_USART1_UART_Init(void) {
-
   /* USER CODE BEGIN USART1_Init 0 */
 
   /* USER CODE END USART1_Init 0 */
@@ -250,7 +243,6 @@ void MX_USART1_UART_Init(void) {
  * Enable DMA controller clock
  */
 static void MX_DMA_Init(void) {
-
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
