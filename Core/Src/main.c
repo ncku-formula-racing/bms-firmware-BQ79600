@@ -40,7 +40,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_RESET : GPIO_PIN_SET)
 #define bms_run() HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13)
 /* USER CODE END PM */
 
@@ -88,8 +88,7 @@ int main(void) {
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick.
-   */
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -108,6 +107,9 @@ int main(void) {
   MX_DMA_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  bms_fault(1);
+
   const static size_t n_devices = 2;
 
   bq79600_t *bms_instance = open_bq79600_instance(0);
