@@ -112,6 +112,7 @@ int main(void) {
   bms_fault(1);
 
   const static size_t n_devices = 2;
+  const static size_t n_cells_per_device = 14;
 
   bq79600_t *bms_instance = open_bq79600_instance(0);
   bms_instance->mode = BQ_UART;
@@ -173,11 +174,28 @@ int main(void) {
   buf = 0x0A;  // CTL_ACT=1 | CTL_TIME=010 (2s)
   bq79600_construct_command(bms_instance, STACK_WRITE, 0, COMM_TIMEOUT_CONF, 1, &buf);
   bq79600_tx(bms_instance);
+
+  /* Config stack device ADCs */
+  buf = n_cells_per_device - 6;
+  bq79600_construct_command(bms_instance, STACK_WRITE, 0, ACTIVE_CELL, 1, &buf);
+  bq79600_tx(bms_instance);
+
+  buf = 0x06;
+  bq79600_construct_command(bms_instance, STACK_WRITE, 0, ADC_CTRL1, 1, &buf);
+  bq79600_tx(bms_instance);
+  HAL_Delay(1 * n_devices);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
+    bq79600_construct_command(bms_instance, STACK_READ, 0, DIETEMP1_HI, 2, NULL);
+    bq79600_tx(bms_instance);
+    bq79600_bsp_ready(bms_instance);
+
+    int16_t dietemp1 = (bms_instance->rx_buf[4] << 8) | bms_instance->rx_buf[5];
+    SEGGER_RTT_printf(0, "[BQ79600] DIETEMP1: %d\n", (int)(dietemp1 * 0.025));
+    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
