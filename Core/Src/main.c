@@ -174,6 +174,7 @@ int main(void) {
   buf = 0x0A;  // CTL_ACT=1 | CTL_TIME=010 (2s)
   bq79600_construct_command(bms_instance, STACK_WRITE, 0, COMM_TIMEOUT_CONF, 1, &buf);
   bq79600_tx(bms_instance);
+  HAL_Delay(1);
 
   /* Config stack device ADCs */
   buf = n_cells_per_device - 6;
