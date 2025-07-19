@@ -24,6 +24,7 @@
 #include "SEGGER_RTT.h"
 #include "bq79600.h"
 #include "bq79600_def.h"
+#include "bq79616_def.h"
 #include "stm32f103xb.h"
 #include "stm32f1xx_hal_gpio.h"
 /* USER CODE END Includes */
@@ -147,11 +148,11 @@ int main(void) {
   }
   // brdcast write 0x02 to address 0x308 (set BQ7961X-Q1 as stack device )
   buf = 0x02;
-  bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, 0x308, 1, &buf);
+  bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, COMM_CTRL, 1, &buf);
   bq79600_tx(bms_instance);
 
   buf = 0x03;
-  bq79600_construct_command(bms_instance, SINGLE_DEVICE_WRITE, n_devices - 1, 0x308, 1, &buf);
+  bq79600_construct_command(bms_instance, SINGLE_DEVICE_WRITE, n_devices - 1, COMM_CTRL, 1, &buf);
   bq79600_tx(bms_instance);
 
   HAL_Delay(1);
