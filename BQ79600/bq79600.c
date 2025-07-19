@@ -16,8 +16,7 @@ void bq79600_construct_command(bq79600_t *instance, REQ_TYPE req_type, uint8_t a
     for (int i = 0; i < data_len; i++) *tx_buf++ = data[i];
   else
     *tx_buf++ = data_len - 1;
-  if (req_type >= 2)
-    data_len = 0;
+  if (req_type >= 2) data_len = 0;
   uint16_t crc = bq79600_bsp_crc(instance->tx_buf, 4 + data_len);
   *tx_buf++ = crc & 0xFF;
   *tx_buf++ = (crc >> 8) & 0xFF;
@@ -39,6 +38,7 @@ void bq79600_tx(bq79600_t *instance) {
 }
 
 void bq79600_rx_callback(bq79600_t *instance) {
+  if (instance->rx_len < 6) return;
   uint16_t crc = bq79600_bsp_crc(instance->rx_buf, instance->rx_len - 2);
   uint16_t crc_rx = (instance->rx_buf[instance->rx_len - 2] | (instance->rx_buf[instance->rx_len - 1] << 8));
   if (crc != crc_rx) {

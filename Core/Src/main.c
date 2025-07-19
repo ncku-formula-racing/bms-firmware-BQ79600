@@ -108,6 +108,8 @@ int main(void) {
   MX_DMA_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  const static size_t n_devices = 2;
+
   bq79600_t *bms_instance = open_bq79600_instance(0);
   bms_instance->mode = BQ_UART;
   bms_instance->state = BQ_SHUTDOWN;
@@ -120,12 +122,49 @@ int main(void) {
   HAL_UARTEx_ReceiveToIdle_IT(&huart1, bms_instance->rx_buf, sizeof(bms_instance->rx_buf));
   HAL_Delay(10);
 
-  uint8_t control1;
-  bq79600_read_reg(bms_instance, 0x00, CONTROL1, &control1);
-  control1 |= 0x20;
-  bq79600_write_reg(bms_instance, 0x00, CONTROL1, &control1, 1);
-  SEGGER_RTT_printf(0, "Writing Control1: %02X\n", control1);
-  HAL_Delay(100);
+  uint8_t buf = 0x20;
+  bq79600_write_reg(bms_instance, 0x00, CONTROL1, &buf, 1);
+  HAL_Delay(12 * n_devices);
+
+  // /* Auto addressing */
+  buf = 0;
+  for (int addr = 0x343; addr < 0x34B; addr++) {
+    bq79600_construct_command(bms_instance, STACK_WRITE, 0, addr, 1, &buf);
+    bq79600_tx(bms_instance);
+  }
+
+  // Enable auto addressing
+  buf = 0x01;
+  bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, CONTROL1, 1, &buf);
+  bq79600_tx(bms_instance);
+  // brdcast write consecutively to 0x306
+  for (size_t i = 0; i < n_devices; i++) {
+    buf = i;
+    bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, DIR0_ADDR, 1, &buf);
+    bq79600_tx(bms_instance);
+  }
+  // brdcast write 0x02 to address 0x308 (set BQ7961X-Q1 as stack device )
+  buf = 0x02;
+  bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, 0x308, 1, &buf);
+  bq79600_tx(bms_instance);
+
+  buf = 0x03;
+  bq79600_construct_command(bms_instance, SINGLE_DEVICE_WRITE, n_devices - 1, 0x308, 1, &buf);
+  bq79600_tx(bms_instance);
+
+  HAL_Delay(1);
+
+  for (int addr = 0x343; addr < 0x34B; addr++) {
+    bq79600_construct_command(bms_instance, STACK_READ, 0, addr, 1, NULL);
+    bq79600_tx(bms_instance);
+    bq79600_bsp_ready(bms_instance);
+  }
+
+  for (size_t i = 0; i < n_devices; i++) {
+    bq79600_construct_command(bms_instance, SINGLE_DEVICE_READ, i, DIR0_ADDR, 1, NULL);
+    bq79600_tx(bms_instance);
+    bq79600_bsp_ready(bms_instance);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -134,9 +173,6 @@ int main(void) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    bq79600_read_reg(bms_instance, 0x00, CONTROL1, &control1);
-    SEGGER_RTT_printf(0, "Control1: %02X\n", bms_instance->rx_buf[4]);
-    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
