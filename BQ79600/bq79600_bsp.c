@@ -46,6 +46,7 @@ void bq79600_bsp_ready(bq79600_t *instance) {
 extern UART_HandleTypeDef huart1;
 void bq79600_bsp_uart_tx(bq79600_t *instance) {
   HAL_UART_Transmit_DMA(&huart1, instance->tx_buf, instance->tx_len);
+  HAL_Delay(1);
 }
 
 uint32_t bq79600_bsp_crc(uint8_t *buf, size_t len) {
