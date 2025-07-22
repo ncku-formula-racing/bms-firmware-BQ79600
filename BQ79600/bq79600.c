@@ -1,6 +1,7 @@
 #include "bq79600.h"
 
 #include "SEGGER_RTT.h"
+#include "bq79616_def.h"
 
 #define MAX_INSTANCE 1
 static bq79600_t instance_list[MAX_INSTANCE] = {0};
@@ -79,4 +80,43 @@ void bq79600_wakeup(bq79600_t *instance) {
   }
   instance->state = BQ_ACTIVATE;
   SEGGER_RTT_printf(0, "[BQ79600] wakeup.\n");
+}
+
+void bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices) {
+  uint8_t buf = 0;
+  for (int addr = 0x343; addr < 0x34B; addr++) {
+    bq79600_construct_command(instance, STACK_WRITE, 0, addr, 1, &buf);
+    bq79600_tx(instance);
+  }
+
+  // Enable auto addressing
+  buf = 0x01;
+  bq79600_construct_command(instance, BROADCAST_WRITE, 0, CONTROL1, 1, &buf);
+  bq79600_tx(instance);
+  // brdcast write consecutively to 0x306
+  for (size_t i = 0; i < n_devices; i++) {
+    buf = i;
+    bq79600_construct_command(instance, BROADCAST_WRITE, 0, DIR0_ADDR, 1, &buf);
+    bq79600_tx(instance);
+  }
+  // brdcast write 0x02 to address 0x308 (set BQ7961X-Q1 as stack device )
+  buf = 0x02;
+  bq79600_construct_command(instance, BROADCAST_WRITE, 0, COMM_CTRL, 1, &buf);
+  bq79600_tx(instance);
+
+  buf = 0x03;
+  bq79600_construct_command(instance, SINGLE_DEVICE_WRITE, n_devices - 1, COMM_CTRL, 1, &buf);
+  bq79600_tx(instance);
+
+  for (int addr = 0x343; addr < 0x34B; addr++) {
+    bq79600_construct_command(instance, STACK_READ, 0, addr, 1, NULL);
+    bq79600_tx(instance);
+    bq79600_bsp_ready(instance);
+  }
+
+  for (size_t i = 0; i < n_devices; i++) {
+    bq79600_construct_command(instance, SINGLE_DEVICE_READ, i, DIR0_ADDR, 1, NULL);
+    bq79600_tx(instance);
+    bq79600_bsp_ready(instance);
+  }
 }

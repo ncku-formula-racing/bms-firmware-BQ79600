@@ -38,6 +38,7 @@ void bq79600_construct_command(bq79600_t *instance, REQ_TYPE req_type, uint8_t a
                                uint8_t data_len, uint8_t *data);
 void bq79600_tx(bq79600_t *instance);
 void bq79600_rx_callback(bq79600_t *instance);
+void bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices);
 
 /* Read/Write register of single device */
 void bq79600_read_reg(bq79600_t *instance, uint8_t dev_addr, uint16_t reg_addr, uint8_t *data);

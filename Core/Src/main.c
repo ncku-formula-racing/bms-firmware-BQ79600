@@ -130,45 +130,7 @@ int main(void) {
   bq79600_write_reg(bms_instance, 0x00, CONTROL1, &buf, 1);
   HAL_Delay(12 * n_devices);
 
-  // /* Auto addressing */
-  buf = 0;
-  for (int addr = 0x343; addr < 0x34B; addr++) {
-    bq79600_construct_command(bms_instance, STACK_WRITE, 0, addr, 1, &buf);
-    bq79600_tx(bms_instance);
-  }
-
-  // Enable auto addressing
-  buf = 0x01;
-  bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, CONTROL1, 1, &buf);
-  bq79600_tx(bms_instance);
-  // brdcast write consecutively to 0x306
-  for (size_t i = 0; i < n_devices; i++) {
-    buf = i;
-    bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, DIR0_ADDR, 1, &buf);
-    bq79600_tx(bms_instance);
-  }
-  // brdcast write 0x02 to address 0x308 (set BQ7961X-Q1 as stack device )
-  buf = 0x02;
-  bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, COMM_CTRL, 1, &buf);
-  bq79600_tx(bms_instance);
-
-  buf = 0x03;
-  bq79600_construct_command(bms_instance, SINGLE_DEVICE_WRITE, n_devices - 1, COMM_CTRL, 1, &buf);
-  bq79600_tx(bms_instance);
-
-  HAL_Delay(1);
-
-  for (int addr = 0x343; addr < 0x34B; addr++) {
-    bq79600_construct_command(bms_instance, STACK_READ, 0, addr, 1, NULL);
-    bq79600_tx(bms_instance);
-    bq79600_bsp_ready(bms_instance);
-  }
-
-  for (size_t i = 0; i < n_devices; i++) {
-    bq79600_construct_command(bms_instance, SINGLE_DEVICE_READ, i, DIR0_ADDR, 1, NULL);
-    bq79600_tx(bms_instance);
-    bq79600_bsp_ready(bms_instance);
-  }
+  bq79600_auto_addressing(bms_instance, n_devices);
 
   /* Set long communication timeout */
   buf = 0x0A;  // CTL_ACT=1 | CTL_TIME=010 (2s)
