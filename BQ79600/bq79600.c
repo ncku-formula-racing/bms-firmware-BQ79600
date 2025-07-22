@@ -82,7 +82,7 @@ void bq79600_wakeup(bq79600_t *instance) {
   SEGGER_RTT_printf(0, "[BQ79600] wakeup.\n");
 }
 
-void bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices) {
+bq79600_error_t bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices) {
   uint8_t buf = 0;
   for (int addr = 0x343; addr < 0x34B; addr++) {
     bq79600_construct_command(instance, STACK_WRITE, 0, addr, 1, &buf);
@@ -112,11 +112,14 @@ void bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices) {
     bq79600_construct_command(instance, STACK_READ, 0, addr, 1, NULL);
     bq79600_tx(instance);
     bq79600_bsp_ready(instance);
+    if (instance->fault) return BQ_ERROR;
   }
 
   for (size_t i = 0; i < n_devices; i++) {
     bq79600_construct_command(instance, SINGLE_DEVICE_READ, i, DIR0_ADDR, 1, NULL);
     bq79600_tx(instance);
     bq79600_bsp_ready(instance);
+    if (instance->fault) return BQ_ERROR;
   }
+  return BQ_SUCCESS;
 }

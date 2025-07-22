@@ -40,7 +40,14 @@ void bq79600_bsp_uart_init(bq79600_t *instance) {
 
 void bq79600_bsp_ready(bq79600_t *instance) {
   /* Change here to non-blocking mode if using RTOS */
-  while (instance->ready == 0);
+  const uint32_t timeout = 1000;  // 1 second timeout
+  uint32_t now = HAL_GetTick();
+  while (instance->ready == 0) {
+    if (now - HAL_GetTick() > timeout) {
+      instance->fault = 1;
+      return;
+    }
+  }
 }
 
 extern UART_HandleTypeDef huart1;

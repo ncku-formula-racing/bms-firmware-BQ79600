@@ -130,7 +130,11 @@ int main(void) {
   bq79600_write_reg(bms_instance, 0x00, CONTROL1, &buf, 1);
   HAL_Delay(12 * n_devices);
 
-  bq79600_auto_addressing(bms_instance, n_devices);
+  bq79600_error_t err = bq79600_auto_addressing(bms_instance, n_devices);
+  if (err) {
+    SEGGER_RTT_printf(0, "[BQ79600] Auto addressing failed.\n");
+    while (1);
+  }
 
   /* Set long communication timeout */
   buf = 0x0A;  // CTL_ACT=1 | CTL_TIME=010 (2s)
