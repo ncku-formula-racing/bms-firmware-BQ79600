@@ -29,7 +29,7 @@ typedef struct {
   bq79600_mode_t mode;
   bq79600_state_t state;
   uint8_t tx_buf[8 + 6];
-  uint8_t rx_buf[128 + 6];
+  uint8_t rx_buf[2048];
   uint8_t tx_len;
   uint8_t rx_len;
   uint8_t fault;
