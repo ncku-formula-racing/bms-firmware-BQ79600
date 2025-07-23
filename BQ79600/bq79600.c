@@ -40,12 +40,25 @@ void bq79600_tx(bq79600_t *instance) {
 
 void bq79600_rx_callback(bq79600_t *instance) {
   if (instance->rx_len < 6) return;
-  uint16_t crc = bq79600_bsp_crc(instance->rx_buf, instance->rx_len - 2);
-  uint16_t crc_rx = (instance->rx_buf[instance->rx_len - 2] | (instance->rx_buf[instance->rx_len - 1] << 8));
-  if (crc != crc_rx) {
-    SEGGER_RTT_printf(0, "[BQ79600] CRC error: %04X %04X\n", crc, crc_rx);
-    instance->fault = 1;
-    return;
+  SEGGER_RTT_printf(0, "[BQ79600] RX[%d]: ", instance->rx_len);
+  for (int i = 0; i < instance->rx_len; i++) SEGGER_RTT_printf(0, "%02X ", instance->rx_buf[i]);
+  SEGGER_RTT_printf(0, "\n");
+
+  size_t idx = 0;
+  uint8_t crc_buf[128 + 6];
+  while (idx < instance->rx_len) {
+    for (int i = 0; i < 4; i++) crc_buf[i] = instance->rx_buf[idx++];
+    uint8_t len = (crc_buf[0] & 0x7F) + 1;
+    for (int i = 0; i < len; i++) crc_buf[4 + i] = instance->rx_buf[idx++];
+    crc_buf[4 + len] = instance->rx_buf[idx++];
+    crc_buf[5 + len] = instance->rx_buf[idx++];
+    uint16_t crc = bq79600_bsp_crc(crc_buf, len + 4);
+    uint16_t crc_rx = (crc_buf[4 + len] << 8) | crc_buf[5 + len];
+    if (!(crc ^ crc_rx)) {
+      SEGGER_RTT_printf(0, "[BQ79600] CRC error: %04X %04X\n", crc, crc_rx);
+      instance->fault = 1;
+      return;
+    }
   }
   instance->fault = 0;
   instance->ready = 1;
