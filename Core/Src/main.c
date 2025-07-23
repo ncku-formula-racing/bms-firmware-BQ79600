@@ -36,7 +36,18 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define n_devices 3
+#define n_cells_per_device 14
+#define n_temp_pre_device 8
 
+typedef struct {
+  float temperature[n_temp_pre_device];  // degC
+  float vcells[n_cells_per_device];      // mV
+  float dietemp;                         // degC
+  uint32_t timestamp;
+} module_t;
+
+module_t modules[n_devices - 1] = {0};
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -67,6 +78,10 @@ static void MX_CAN_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+float raw_to_float(void *raw) {
+  return (float)(int16_t)(((*(uint16_t *)raw & 0xFF) << 8) | ((*(uint16_t *)raw & 0xFF00) >> 8));
+}
+
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
   static bq79600_t *instance = NULL;
   instance = open_bq79600_instance(0);
@@ -110,9 +125,6 @@ int main(void) {
   /* USER CODE BEGIN 2 */
 
   bms_fault(1);
-
-  const static size_t n_devices = 2;
-  const static size_t n_cells_per_device = 14;
 
   bq79600_t *bms_instance = open_bq79600_instance(0);
   bms_instance->mode = BQ_UART;
@@ -160,9 +172,21 @@ int main(void) {
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
 
-    int16_t dietemp1 = (bms_instance->rx_buf[4] << 8) | bms_instance->rx_buf[5];
-    SEGGER_RTT_printf(0, "[BQ79600] DIETEMP1: %d\n", (int)(dietemp1 * 0.025));
-    HAL_Delay(1000);
+    for (int i = 0; i < n_devices - 2; i++)
+      modules[i].dietemp = raw_to_float(&bms_instance->rx_buf[4 + i * 8]) * 0.025;
+
+    uint32_t start_vcells = VCELL1_HI - n_cells_per_device * 2 + 2;
+    bq79600_construct_command(bms_instance, STACK_READ, 0, start_vcells, n_cells_per_device * 2, NULL);
+    bq79600_tx(bms_instance);
+    bq79600_bsp_ready(bms_instance);
+
+    for (int i = 0; i < n_devices - 2; i++)
+      for (int j = 0; j < n_cells_per_device; j++)
+        modules[i].vcells[j] =
+            raw_to_float(&bms_instance->rx_buf[4 + i * (n_cells_per_device * 2 + 6) + 2 * j]) * 0.19073;
+
+    for (int i = 0; i < n_devices - 2; i++) modules[i].timestamp = HAL_GetTick();
+    HAL_Delay(50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
