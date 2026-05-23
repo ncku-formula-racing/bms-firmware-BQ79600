@@ -4,6 +4,7 @@
 
 #ifdef STM32F103xB
 #include "main.h"
+#include "usart.h"
 #endif
 
 /* Utilize SysTick to implement uS delay */
@@ -36,6 +37,7 @@ void bq79600_bsp_uart_init(bq79600_t *instance) {
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init((GPIO_TypeDef *)instance->rx_port, &GPIO_InitStruct);
   MX_USART1_UART_Init();
+  
 }
 
 void bq79600_bsp_ready(bq79600_t *instance) {
