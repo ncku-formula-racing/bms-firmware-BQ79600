@@ -2,6 +2,7 @@
 
 #include "SEGGER_RTT.h"
 #include "bq79616_def.h"
+#include "stm32f1xx_hal.h"
 
 #define MAX_INSTANCE 1
 static bq79600_t instance_list[MAX_INSTANCE] = {0};
@@ -93,6 +94,158 @@ void bq79600_wakeup(bq79600_t *instance) {
   }
   instance->state = BQ_ACTIVATE;
   SEGGER_RTT_printf(0, "[BQ79600] wakeup.\n");
+}
+
+void bq79600_init(bq79600_t *instance, size_t n_devices, size_t n_cells_per_device) {
+  uint8_t buf;
+
+  SEGGER_RTT_printf(0, "[BQ79616] Starting stack init (%u devices, %u cells each).\n",
+                    (unsigned)n_devices, (unsigned)n_cells_per_device);
+
+  // -------------------------------------------------------------------------
+  // 1. ACTIVE CELL CONFIGURATION
+  buf = (uint8_t)(n_cells_per_device - 6);
+  bq79600_construct_command(instance, STACK_WRITE, 0, ACTIVE_CELL, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(2);
+
+  // -------------------------------------------------------------------------
+  // 2. GPIO CONFIGURATION  (for NTC thermistor measurement)
+  buf = 0x09;  // GPIO1, GPIO2 → ADC + OTUT input
+  bq79600_construct_command(instance, STACK_WRITE, 0, GPIO_CONF1, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0x09;  // GPIO3, GPIO4 → ADC + OTUT input
+  bq79600_construct_command(instance, STACK_WRITE, 0, GPIO_CONF2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0x09;  // GPIO5, GPIO6 → ADC + OTUT input
+  bq79600_construct_command(instance, STACK_WRITE, 0, GPIO_CONF3, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0x09;  // GPIO7, GPIO8 → ADC + OTUT input
+  bq79600_construct_command(instance, STACK_WRITE, 0, GPIO_CONF4, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 3. ADC CONFIGURATION  (OTP shadow – effective until power-off)
+  buf = 0x06;  // AUX_SETTLE=4.3ms, LPF_BB=6.5Hz, LPF_VCELL=600Hz (1.6ms avg)
+  bq79600_construct_command(instance, STACK_WRITE, 0, ADC_CONF1, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0x00;  // ADC_DLY=0 (no delay)(default)
+  bq79600_construct_command(instance, STACK_WRITE, 0, ADC_CONF2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 4.1 OVERVOLTAGE THRESHOLD  (OTP shadow)
+  buf = 0x25;  // 4250 mV (4.25 V)
+  bq79600_construct_command(instance, STACK_WRITE, 0, OV_THRESH, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 4.2. UNDERVOLTAGE THRESHOLD  (OTP shadow)
+  buf = 0x24;  // 3000 mV (3.0 V)
+  bq79600_construct_command(instance, STACK_WRITE, 0, UV_THRESH, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 4.3. DISABLE UV ON UNUSED CELLS
+  buf = 0x00;  // cells 1–8 all active
+  bq79600_construct_command(instance, STACK_WRITE, 0, UV_DISABLE1, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+  {
+    uint8_t unused = (uint8_t)(16u - n_cells_per_device);
+    // Shift unused count of '1' bits into the MSBs of the byte
+    buf = (unused > 0) ? (uint8_t)((0xFFu << (8u - unused)) & 0xFFu) : 0x00u;
+  }
+  bq79600_construct_command(instance, STACK_WRITE, 0, UV_DISABLE2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 5.1 OVER/UNDER TEMPERATURE THRESHOLD  (OTP shadow)
+  buf = 0xED;  // OT_THR=0x0D(23%~55°C), UT_THR=0x7(80%~-20°C) — assumes 10k NTC + 10k pull-up, must calibrate
+  bq79600_construct_command(instance, STACK_WRITE, 0, OTUT_THRESH, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+
+  // -------------------------------------------------------------------------
+  // 6. FAULT MASKING  (OTP shadow)
+  buf = 0x00;
+  bq79600_construct_command(instance, STACK_WRITE, 0, FAULT_MSK1, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0x00;
+  bq79600_construct_command(instance, STACK_WRITE, 0, FAULT_MSK2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 7. COMMUNICATION TIMEOUT
+  buf = 0x0A;  // CTL_ACT=1, CTL_TIME=010 (2s)
+  bq79600_construct_command(instance, STACK_WRITE, 0, COMM_TIMEOUT_CONF, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 8. OV/UV HARDWARE PROTECTION CONTROL
+  buf = 0x05;  // OVUV_MODE=01 (round-robin), OVUV_GO=1
+  bq79600_construct_command(instance, STACK_WRITE, 0, OVUV_CTRL, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 9. OT/UT HARDWARE PROTECTION CONTROL
+  buf = 0x05;  // OTUT_MODE=01 (round-robin), OTUT_GO=1
+  bq79600_construct_command(instance, STACK_WRITE, 0, OTUT_CTRL, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // -------------------------------------------------------------------------
+  // 10. ADC RUNTIME CONTROL
+  // ADC_CTRL1 (0x030D)
+  buf = 0x1A;
+  bq79600_construct_command(instance, STACK_WRITE, 0, ADC_CTRL1, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // ADC_CTRL2 (0x030E)
+  buf = 0x00;
+  bq79600_construct_command(instance, STACK_WRITE, 0, ADC_CTRL2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  // ADC_CTRL3 (0x030F): AUX ADC 控制
+  buf = 0x06;
+  bq79600_construct_command(instance, STACK_WRITE, 0, ADC_CTRL3, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(2u * (uint32_t)n_devices);  // 等待第一輪 conversion 完成
+
+  // -------------------------------------------------------------------------
+  // 11. CLEAR INITIAL FAULT FLAGS
+  buf = 0xFF;
+  bq79600_construct_command(instance, STACK_WRITE, 0, FAULT_RST1, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0xFF;
+  bq79600_construct_command(instance, STACK_WRITE, 0, FAULT_RST2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(2);
+
+  SEGGER_RTT_printf(0, "[BQ79616] Stack init complete.\n");
 }
 
 bq79600_error_t bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices) {
