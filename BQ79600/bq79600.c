@@ -54,7 +54,7 @@ void bq79600_rx_callback(bq79600_t *instance) {
     crc_buf[4 + len] = instance->rx_buf[idx++];
     crc_buf[5 + len] = instance->rx_buf[idx++];
     uint16_t crc = bq79600_bsp_crc(crc_buf, len + 4);
-    uint16_t crc_rx = (crc_buf[4 + len] << 8) | crc_buf[5 + len];
+    uint16_t crc_rx = (crc_buf[5 + len] << 8) | crc_buf[4 + len];
     if ((crc ^ crc_rx)) {
       SEGGER_RTT_printf(0, "[BQ79600] CRC error: %04X %04X\n", crc, crc_rx);
       instance->fault = 1;
