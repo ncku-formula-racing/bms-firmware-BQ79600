@@ -216,7 +216,7 @@ void bq79600_init(bq79600_t *instance, size_t n_devices, size_t n_cells_per_devi
   // -------------------------------------------------------------------------
   // 10. ADC RUNTIME CONTROL
   // ADC_CTRL1 (0x030D)
-  buf = 0x1A;
+  buf = 0x1E;
   bq79600_construct_command(instance, STACK_WRITE, 0, ADC_CTRL1, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
