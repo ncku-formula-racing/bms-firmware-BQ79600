@@ -60,7 +60,7 @@ module_t modules[n_devices - 1] = {0};
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_RESET : GPIO_PIN_SET)
+#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define bms_run() HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13)
 /* USER CODE END PM */
 
