@@ -4,12 +4,13 @@
 #include "bq79616_def.h"
 #include "stm32f1xx_hal.h"
 
+#define BQ_LOG_ENABLE 0
 #define MAX_INSTANCE 1
 static bq79600_t instance_list[MAX_INSTANCE] = {0};
 
-void bq79600_construct_command(bq79600_t *instance, REQ_TYPE req_type, uint8_t addr, uint16_t reg_addr,
-                               uint8_t data_len, uint8_t *data) {
-  uint8_t *tx_buf = instance->tx_buf;
+void bq79600_construct_command(bq79600_t* instance, REQ_TYPE req_type, uint8_t addr, uint16_t reg_addr,
+                               uint8_t data_len, uint8_t* data) {
+  uint8_t* tx_buf = instance->tx_buf;
   *tx_buf++ = 0x80 | (req_type << 4) | ((req_type & 1) ? ((data_len - 1) & 0x0F) : 0);
   if (req_type < 2) *tx_buf++ = addr & 0x3F;
   *tx_buf++ = (reg_addr >> 8) & 0xFF;
@@ -25,11 +26,13 @@ void bq79600_construct_command(bq79600_t *instance, REQ_TYPE req_type, uint8_t a
   instance->tx_len = tx_buf - instance->tx_buf;
 }
 
-void bq79600_tx(bq79600_t *instance) {
+void bq79600_tx(bq79600_t* instance) {
   instance->ready = 0;
+#if BQ_LOG_ENABLE
   SEGGER_RTT_printf(0, "[BQ79600] TX: ");
   for (int i = 0; i < instance->tx_len; i++) SEGGER_RTT_printf(0, "%02X ", instance->tx_buf[i]);
   SEGGER_RTT_printf(0, "\n");
+#endif
   switch (instance->mode) {
     case BQ_UART:
       bq79600_bsp_uart_tx(instance);
@@ -39,12 +42,13 @@ void bq79600_tx(bq79600_t *instance) {
   }
 }
 
-void bq79600_rx_callback(bq79600_t *instance) {
+void bq79600_rx_callback(bq79600_t* instance) {
   if (instance->rx_len < 6) return;
+#if BQ_LOG_ENABLE
   SEGGER_RTT_printf(0, "[BQ79600] RX[%d]: ", instance->rx_len);
   for (int i = 0; i < instance->rx_len; i++) SEGGER_RTT_printf(0, "%02X ", instance->rx_buf[i]);
   SEGGER_RTT_printf(0, "\n");
-
+#endif
   size_t idx = 0;
   uint8_t crc_buf[128 + 6];
   while (idx < instance->rx_len) {
@@ -65,25 +69,25 @@ void bq79600_rx_callback(bq79600_t *instance) {
   instance->ready = 1;
 }
 
-void bq79600_read_reg(bq79600_t *instance, uint8_t dev_addr, uint16_t reg_addr, uint8_t *data) {
+void bq79600_read_reg(bq79600_t* instance, uint8_t dev_addr, uint16_t reg_addr, uint8_t* data) {
   bq79600_construct_command(instance, SINGLE_DEVICE_READ, dev_addr, reg_addr, 1, NULL);
   bq79600_tx(instance);
   bq79600_bsp_ready(instance);
   *data = instance->rx_buf[4];
 }
 
-void bq79600_write_reg(bq79600_t *instance, uint8_t dev_addr, uint16_t reg_addr, uint8_t *data,
+void bq79600_write_reg(bq79600_t* instance, uint8_t dev_addr, uint16_t reg_addr, uint8_t* data,
                        uint8_t data_len) {
   bq79600_construct_command(instance, SINGLE_DEVICE_WRITE, dev_addr, reg_addr, data_len, data);
   bq79600_tx(instance);
 }
 
-bq79600_t *open_bq79600_instance(uint32_t id) {
+bq79600_t* open_bq79600_instance(uint32_t id) {
   if (id >= MAX_INSTANCE) return NULL;
   return &instance_list[id];
 }
 
-void bq79600_wakeup(bq79600_t *instance) {
+void bq79600_wakeup(bq79600_t* instance) {
   bq79600_bsp_wakeup(instance);
   switch (instance->mode) {
     case BQ_UART:
@@ -96,11 +100,11 @@ void bq79600_wakeup(bq79600_t *instance) {
   SEGGER_RTT_printf(0, "[BQ79600] wakeup.\n");
 }
 
-void bq79600_init(bq79600_t *instance, size_t n_devices, size_t n_cells_per_device) {
+void bq79600_init(bq79600_t* instance, size_t n_devices, size_t n_cells_per_device) {
   uint8_t buf;
 
-  SEGGER_RTT_printf(0, "[BQ79616] Starting stack init (%u devices, %u cells each).\n",
-                    (unsigned)n_devices, (unsigned)n_cells_per_device);
+  SEGGER_RTT_printf(0, "[BQ79616] Starting stack init (%u devices, %u cells each).\n", (unsigned)n_devices,
+                    (unsigned)n_cells_per_device);
 
   // -------------------------------------------------------------------------
   // 1. ACTIVE CELL CONFIGURATION
@@ -259,7 +263,7 @@ void bq79600_init(bq79600_t *instance, size_t n_devices, size_t n_cells_per_devi
   SEGGER_RTT_printf(0, "[BQ79616] Stack init complete.\n");
 }
 
-bq79600_error_t bq79600_auto_addressing(bq79600_t *instance, const size_t n_devices) {
+bq79600_error_t bq79600_auto_addressing(bq79600_t* instance, const size_t n_devices) {
   uint8_t buf = 0;
   for (int addr = 0x343; addr < 0x34B; addr++) {
     bq79600_construct_command(instance, STACK_WRITE, 0, addr, 1, &buf);
