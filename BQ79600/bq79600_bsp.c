@@ -7,6 +7,8 @@
 #include "usart.h"
 #endif
 
+#include "SEGGER_RTT.h"
+
 /* Utilize SysTick to implement uS delay */
 extern TIM_HandleTypeDef htim1;
 static inline void __delayus(uint32_t us) {
@@ -45,7 +47,8 @@ void bq79600_bsp_ready(bq79600_t *instance) {
   const uint32_t timeout = 1000;  // 1 second timeout
   uint32_t now = HAL_GetTick();
   while (instance->ready == 0) {
-    if (now - HAL_GetTick() > timeout) {
+    if (HAL_GetTick() - now > timeout) {
+      SEGGER_RTT_printf(0, "[BQ79600] Timeout waiting for ready signal.\n");
       instance->fault = 1;
       return;
     }
