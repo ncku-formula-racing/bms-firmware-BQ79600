@@ -109,6 +109,12 @@ void bq79600_init(bq79600_t *instance, size_t n_devices, size_t n_cells_per_devi
   bq79600_tx(instance);
   HAL_Delay(2);
 
+  // Enable TSREF
+  buf = 0x01;
+  bq79600_construct_command(instance, STACK_WRITE, 0, CONTROL2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(2);
+
   // -------------------------------------------------------------------------
   // 2. GPIO CONFIGURATION  (for NTC thermistor measurement)
   buf = 0x09;  // GPIO1, GPIO2 → ADC + OTUT input
@@ -126,7 +132,7 @@ void bq79600_init(bq79600_t *instance, size_t n_devices, size_t n_cells_per_devi
   bq79600_tx(instance);
   HAL_Delay(1);
 
-  buf = 0x09;  // GPIO7, GPIO8 → ADC + OTUT input
+  buf = 0x01;  // GPIO7 → ADC + OTUT input GPIO8 -> HighZ
   bq79600_construct_command(instance, STACK_WRITE, 0, GPIO_CONF4, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
