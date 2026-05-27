@@ -39,9 +39,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define n_devices 3
+#define n_devices 2
 #define n_cells_per_device 14
-#define n_temp_pre_device 8
+#define n_temp_pre_device 7
 
 typedef struct {
   float temperature[n_temp_pre_device];  // GPIO raw voltage (mV) — NTC 校準後換算 °C
@@ -235,7 +235,8 @@ int main(void)
       int d_f = (int)((modules[i].dietemp - d_i) * 100);
       SEGGER_RTT_printf(0, "  DieTmp : %d.%02d C\n", d_i, d_f);
 
-      for (int j = 0; j < n_cells_per_device; j++) {
+      int j = n_cells_per_device;
+      while (j--) {
         int v_i = (int)modules[i].vcells[j];
         int v_f = (int)((modules[i].vcells[j] - v_i) * 100);
         SEGGER_RTT_printf(0, "  V[%02d]  : %d.%02d mV\n", j + 1, v_i, v_f);
