@@ -196,7 +196,8 @@ void bq79600_init(bq79600_t* instance, size_t n_devices, size_t n_cells_per_devi
   bq79600_tx(instance);
   HAL_Delay(1);
 
-  buf = 0x00;
+  // Mask out all OTP related fault.
+  buf = 0x60;
   bq79600_construct_command(instance, STACK_WRITE, 0, FAULT_MSK2, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
