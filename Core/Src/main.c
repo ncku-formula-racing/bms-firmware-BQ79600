@@ -30,6 +30,7 @@
 #include "bq79616_def.h"
 #include "stm32f103xb.h"
 #include "stm32f1xx_hal_gpio.h"
+#include "utils.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -169,9 +170,10 @@ int main(void)
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
     for (int i = 0; i < n_devices - 1; i++)
-      for (int j = 0; j < n_temp_pre_device; j++)
-        modules[i].temperature[j] =
-            raw_to_float(&bms_instance->rx_buf[4 + i * 22 + j * 2]) * 0.19073f;
+      for (int j = 0; j < n_temp_pre_device; j++) {
+        float _mV = raw_to_float(&bms_instance->rx_buf[4 + i * 22 + j * 2]) * 0.19073f;
+        modules[i].temperature[j] = NTC2T(_mV);
+      }
 
     /* 3. Cell voltages — frame: (n_cells*2)+6 bytes/device */
     uint32_t start_vcells = VCELL1_HI - n_cells_per_device * 2 + 2;
@@ -244,8 +246,7 @@ int main(void)
 
       for (int j = 0; j < n_temp_pre_device; j++) {
         int t_i = (int)modules[i].temperature[j];
-        int t_f = (int)((modules[i].temperature[j] - t_i) * 100);
-        SEGGER_RTT_printf(0, "  GPIO[%d] : %d.%02d mV\n", j + 1, t_i, t_f);
+        SEGGER_RTT_printf(0, "  GPIO[%d] : %d degC\n", j + 1, t_i);
       }
 
       if (modules[i].fault_summary) {
@@ -356,9 +357,6 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line
-     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-     line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
