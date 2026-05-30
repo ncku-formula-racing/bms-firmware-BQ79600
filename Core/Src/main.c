@@ -182,7 +182,7 @@ int main(void)
     bq79600_bsp_ready(bms_instance);
     for (int i = 0; i < n_devices - 1; i++)
       for (int j = 0; j < n_cells_per_device; j++)
-        modules[i].vcells[j] =
+        modules[i].vcells[n_cells_per_device - j - 1] =
             raw_to_float(&bms_instance->rx_buf[4 + i * (n_cells_per_device * 2 + 6) + 2 * j]) * 0.19073f;
 
     /* 4. Timestamp */
