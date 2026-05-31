@@ -21,6 +21,7 @@ endif()
 # Set the project name
 set(CMAKE_PROJECT_NAME bms-master)
 
+include(cmake/gcc-arm-none-eabi.cmake)
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -36,6 +37,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(SEGGER_RTT)
 add_subdirectory(BQ79600)
+add_subdirectory(FSAE)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -67,4 +69,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # Add user defined libraries
     segger_rtt
     BQ79600
+    FSAE
 )
