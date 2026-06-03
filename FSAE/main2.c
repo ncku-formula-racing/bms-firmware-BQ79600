@@ -21,6 +21,7 @@ typedef struct {
   uint8_t fault_uv[2];    // FAULT_UV1 (cell 1-8), FAULT_UV2 (cell 9-16)
   uint8_t fault_ot;       // FAULT_OT (GPIO 1-8)
   uint8_t fault_ut;       // FAULT_UT (GPIO 1-8)
+  uint8_t bal_stat;
 } module_t;
 
 module_t modules[n_devices - 1] = {0};
@@ -133,6 +134,11 @@ int main2(void) {
       }
     }
 
+    bq79600_construct_command(bms_instance, STACK_READ, 0, BAL_STAT, 1, NULL);
+    bq79600_tx(bms_instance);
+    bq79600_bsp_ready(bms_instance);
+    for (int i = 0; i < n_devices - 1; i++) modules[i].bal_stat = bms_instance->rx_buf[4 + i * 7];
+
     /* 7. Print — RTT 不支援 %f，浮點轉整數印 */
     for (int i = 0; i < n_devices - 1; i++) {
       SEGGER_RTT_printf(0, "\n[Dev %d | t=%lu ms]\n", i, modules[i].timestamp);
@@ -161,6 +167,7 @@ int main2(void) {
       } else {
         SEGGER_RTT_printf(0, "  [OK]\n");
       }
+      SEGGER_RTT_printf(0, "Balancing status: 0x%02X\n", modules[i].bal_stat);
     }
 
     HAL_Delay(50);
