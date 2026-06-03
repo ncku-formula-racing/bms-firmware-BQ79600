@@ -60,6 +60,9 @@ int main2(void) {
   /* Full stack initialization: cell count, GPIO, ADC, OV/UV/OT/UT, fault clear */
   bq79600_init(bms_instance, n_devices, n_cells_per_device);
 
+  bq79600_balance(bms_instance, 0x3FFF);  // balance all cells for testing,
+  bq79600_balance_on(bms_instance);
+
   while (1) {
     /* 1. Die temperature — frame: 2 data + 6 = 8 bytes/device */
     bq79600_construct_command(bms_instance, STACK_READ, 0, DIETEMP1_HI, 2, NULL);
@@ -102,9 +105,6 @@ int main2(void) {
     }
 
     bms_fault(any_fault);
-
-    bq79600_balance(bms_instance, 0x3FFF);  // balance all cells for testing,
-    bq79600_balance_on(bms_instance);
 
     /* 6. Fault detail — 只在有 fault 時才讀 */
     if (any_fault) {
