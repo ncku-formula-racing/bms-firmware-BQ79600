@@ -102,6 +102,9 @@ int main2(void) {
 
     bms_fault(any_fault);
 
+    bq79600_balance(bms_instance, 0x3FFF);  // balance all cells for testing,
+    bq79600_balance_on(bms_instance);
+
     /* 6. Fault detail — 只在有 fault 時才讀 */
     if (any_fault) {
       /* OV — FAULT_OV1(0x053C)+FAULT_OV2(0x053D), 2 bytes, frame: 8 bytes/device */

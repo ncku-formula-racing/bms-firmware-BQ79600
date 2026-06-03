@@ -264,6 +264,38 @@ void bq79600_init(bq79600_t* instance, size_t n_devices, size_t n_cells_per_devi
   SEGGER_RTT_printf(0, "[BQ79616] Stack init complete.\n");
 }
 
+void bq79600_balance(bq79600_t* instance, uint16_t cell_mask) {
+  uint8_t buf;
+  for (uint8_t i = 0; i < 16; i++) {
+    if (cell_mask & (1 << i)) {
+      // Balance for 10s
+      buf = 0x01;
+      bq79600_construct_command(instance, STACK_WRITE, 0, CB_CELL1_CTRL - i, 1, &buf);
+      bq79600_tx(instance);
+      HAL_Delay(1);
+    }
+  }
+  buf = 0x81;
+  bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+}
+
+void bq79600_balance_on(bq79600_t* instance) {
+  uint8_t buf = 0x83;
+  bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+}
+
+void bq79600_balance_off(bq79600_t* instance) {
+  uint8_t buf = 0x81;
+  bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+}
+
 bq79600_error_t bq79600_auto_addressing(bq79600_t* instance, const size_t n_devices) {
   uint8_t buf = 0;
   for (int addr = 0x343; addr < 0x34B; addr++) {

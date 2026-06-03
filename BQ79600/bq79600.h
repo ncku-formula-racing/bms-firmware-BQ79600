@@ -53,6 +53,10 @@ void bq79600_read_reg(bq79600_t *instance, uint8_t dev_addr, uint16_t reg_addr, 
 void bq79600_write_reg(bq79600_t *instance, uint8_t dev_addr, uint16_t reg_addr, uint8_t *data,
                        uint8_t data_len);
 
+void bq79600_balance(bq79600_t *instance, uint16_t cell_mask);
+void bq79600_balance_on(bq79600_t *instance);
+void bq79600_balance_off(bq79600_t *instance);
+
 void bq79600_bsp_wakeup(bq79600_t *instance);
 void bq79600_bsp_spi_init(bq79600_t *instance);
 void bq79600_bsp_uart_init(bq79600_t *instance);
