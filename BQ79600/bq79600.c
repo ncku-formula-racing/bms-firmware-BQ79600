@@ -275,14 +275,19 @@ void bq79600_balance(bq79600_t* instance, uint16_t cell_mask) {
       HAL_Delay(1);
     }
   }
-  buf = 0x81;
+  buf = 0x1;
+  bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
+  bq79600_tx(instance);
+  HAL_Delay(1);
+
+  buf = 0x11;
   bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
 }
 
 void bq79600_balance_on(bq79600_t* instance) {
-  uint8_t buf = 0x83;
+  uint8_t buf = 0x13;
   bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
@@ -290,7 +295,7 @@ void bq79600_balance_on(bq79600_t* instance) {
 }
 
 void bq79600_balance_off(bq79600_t* instance) {
-  uint8_t buf = 0x81;
+  uint8_t buf = 0x11;
   bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
