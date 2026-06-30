@@ -26,7 +26,7 @@ typedef struct {
 
 module_t modules[n_devices - 1] = {0};
 
-#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_RESET : GPIO_PIN_SET)
 
 static float raw_to_float(void* raw) {
   return (float)(int16_t)(((*(uint16_t*)raw & 0xFF) << 8) | ((*(uint16_t*)raw & 0xFF00) >> 8));
