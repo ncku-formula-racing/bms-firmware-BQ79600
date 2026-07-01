@@ -132,6 +132,11 @@ int main2(void) {
         modules[i].fault_ot = bms_instance->rx_buf[4 + i * 8];
         modules[i].fault_ut = bms_instance->rx_buf[5 + i * 8];
       }
+
+      uint8_t rst1 = 0x78;  // RST_UT(bit6) | RST_OT(bit5) | RST_UV(bit4) | RST_OV(bit3)
+      bq79600_construct_command(bms_instance, STACK_WRITE, 0, FAULT_RST1, 1, &rst1);
+      bq79600_tx(bms_instance);
+      HAL_Delay(1);
     }
 
     bq79600_construct_command(bms_instance, STACK_READ, 0, BAL_STAT, 1, NULL);
