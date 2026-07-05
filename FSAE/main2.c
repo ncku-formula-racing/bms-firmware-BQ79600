@@ -25,6 +25,7 @@ typedef struct {
 } module_t;
 
 module_t modules[n_devices - 1] = {0};
+static uint8_t fault_count = 0;  // 連續 fault 次數，滿 3 才觸發 BMS_FAULT
 
 #define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_RESET : GPIO_PIN_SET)
 
@@ -104,7 +105,12 @@ int main2(void) {
       if (modules[i].fault_summary) any_fault = 1;
     }
 
-    bms_fault(any_fault);
+    if (any_fault) {
+      if (fault_count < 3) fault_count++;
+    } else {
+      fault_count = 0;
+    }
+    bms_fault(fault_count >= 3);
 
     /* 6. Fault detail — 只在有 fault 時才讀 */
     if (any_fault) {
