@@ -78,7 +78,7 @@ int main2(void) {
     bq79600_bsp_ready(bms_instance);
     for (int i = 0; i < n_devices - 1; i++)
       for (int j = 0; j < n_temp_pre_device; j++) {
-        float _mV = raw_to_float(&bms_instance->rx_buf[4 + i * 22 + j * 2]) * 0.19073f;
+        float _mV = raw_to_float(&bms_instance->rx_buf[4 + i * 22 + j * 2]) * 0.15259f;
         modules[i].temperature[j] = NTC2T(_mV);
       }
 
