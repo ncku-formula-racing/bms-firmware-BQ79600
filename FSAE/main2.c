@@ -65,10 +65,13 @@ int main2(void) {
   bq79600_balance_on(bms_instance);
 
   while (1) {
+    uint8_t comm_fault = 0;
+
     /* 1. Die temperature — frame: 2 data + 6 = 8 bytes/device */
     bq79600_construct_command(bms_instance, STACK_READ, 0, DIETEMP1_HI, 2, NULL);
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
+    if (bms_instance->fault) comm_fault = 1;
     for (int i = 0; i < n_devices - 1; i++)
       modules[i].dietemp = raw_to_float(&bms_instance->rx_buf[4 + i * 8]) * 0.025f;
 
@@ -76,6 +79,7 @@ int main2(void) {
     bq79600_construct_command(bms_instance, STACK_READ, 0, GPIO1_HI, 16, NULL);
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
+    if (bms_instance->fault) comm_fault = 1;
     for (int i = 0; i < n_devices - 1; i++)
       for (int j = 0; j < n_temp_pre_device; j++) {
         float _mV = raw_to_float(&bms_instance->rx_buf[4 + i * 22 + j * 2]) * 0.15259f;
@@ -87,6 +91,7 @@ int main2(void) {
     bq79600_construct_command(bms_instance, STACK_READ, 0, start_vcells, n_cells_per_device * 2, NULL);
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
+    if (bms_instance->fault) comm_fault = 1;
     for (int i = 0; i < n_devices - 1; i++)
       for (int j = 0; j < n_cells_per_device; j++)
         modules[i].vcells[n_cells_per_device - j - 1] =
@@ -99,11 +104,13 @@ int main2(void) {
     bq79600_construct_command(bms_instance, STACK_READ, 0, BQ79616_FAULT_SUMMARY, 1, NULL);
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
+    if (bms_instance->fault) comm_fault = 1;
     uint8_t any_fault = 0;
     for (int i = 0; i < n_devices - 1; i++) {
       modules[i].fault_summary = bms_instance->rx_buf[4 + i * 7];
       if (modules[i].fault_summary) any_fault = 1;
     }
+    if (comm_fault) any_fault = 1;
 
     if (any_fault) {
       if (fault_count < 3) fault_count++;
@@ -148,6 +155,7 @@ int main2(void) {
     bq79600_construct_command(bms_instance, STACK_READ, 0, BAL_STAT, 1, NULL);
     bq79600_tx(bms_instance);
     bq79600_bsp_ready(bms_instance);
+    if (bms_instance->fault) comm_fault = 1;
     for (int i = 0; i < n_devices - 1; i++) modules[i].bal_stat = bms_instance->rx_buf[4 + i * 7];
 
     /* 7. Print — RTT 不支援 %f，浮點轉整數印 */
