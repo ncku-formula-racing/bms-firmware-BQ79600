@@ -2,6 +2,7 @@
 #include "bq79600.h"
 #include "bq79600_def.h"
 #include "bq79616_def.h"
+#include "can.h"
 #include "main.h"
 #include "stm32f103xb.h"
 #include "usart.h"
@@ -10,6 +11,7 @@
 #define n_devices 2
 #define n_cells_per_device 14
 #define n_temp_pre_device 7
+#define BAL_TRIGGER_CAN_ID 0x88  // this ID for balance 
 
 typedef struct {
   float temperature[n_temp_pre_device];  // degC
@@ -26,11 +28,22 @@ typedef struct {
 
 module_t modules[n_devices - 1] = {0};
 static uint8_t fault_count = 0;  // 連續 fault 次數，滿 3 才觸發 BMS_FAULT
+static volatile uint8_t can_balance_trigger = 0;  // CAN RX ISR 設旗標，主迴圈才真正觸發平衡
 
 #define bms_fault(state) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, (state) ? GPIO_PIN_RESET : GPIO_PIN_SET)
 
 static float raw_to_float(void* raw) {
   return (float)(int16_t)(((*(uint16_t*)raw & 0xFF) << 8) | ((*(uint16_t*)raw & 0xFF00) >> 8));
+}
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef* hcan) {
+  CAN_RxHeaderTypeDef rxHeader;
+  uint8_t rxData[8];
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &rxHeader, rxData) == HAL_OK) {
+    if (rxHeader.IDE == CAN_ID_STD && rxHeader.StdId == BAL_TRIGGER_CAN_ID) {
+      can_balance_trigger = 1;
+    }
+  }
 }
 
 int main2(void) {
@@ -61,11 +74,34 @@ int main2(void) {
   /* Full stack initialization: cell count, GPIO, ADC, OV/UV/OT/UT, fault clear */
   bq79600_init(bms_instance, n_devices, n_cells_per_device);
 
-  bq79600_balance(bms_instance, 0x3FFF);  // balance all cells for testing,
-  bq79600_balance_on(bms_instance);
+  MX_CAN_Init();
+
+  CAN_FilterTypeDef canFilter = {0};
+  canFilter.FilterBank = 0;
+  canFilter.FilterMode = CAN_FILTERMODE_IDMASK;
+  canFilter.FilterScale = CAN_FILTERSCALE_32BIT;
+  canFilter.FilterIdHigh = (BAL_TRIGGER_CAN_ID << 5) & 0xFFFF;  // 標準 ID 精確比對
+  canFilter.FilterIdLow = 0x0000;
+  canFilter.FilterMaskIdHigh = 0xFFE0;
+  canFilter.FilterMaskIdLow = 0x0000;
+  canFilter.FilterFIFOAssignment = CAN_FILTER_FIFO1;  // 對應現有 CAN1_RX1_IRQn
+  canFilter.FilterActivation = ENABLE;
+  canFilter.SlaveStartFilterBank = 14;
+  HAL_CAN_ConfigFilter(&hcan, &canFilter);
+
+  HAL_CAN_Start(&hcan);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING);
 
   while (1) {
     uint8_t comm_fault = 0;
+
+    /* CAN Flag trigger balance */
+    if (can_balance_trigger) {
+      can_balance_trigger = 0;
+      SEGGER_RTT_printf(0, "[CAN] 0x%02X received, start balancing.\n", BAL_TRIGGER_CAN_ID);
+      bq79600_balance(bms_instance, 0x3FFF);
+      bq79600_balance_on(bms_instance);
+    }
 
     /* 1. Die temperature — frame: 2 data + 6 = 8 bytes/device */
     bq79600_construct_command(bms_instance, STACK_READ, 0, DIETEMP1_HI, 2, NULL);
