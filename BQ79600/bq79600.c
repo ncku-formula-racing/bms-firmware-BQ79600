@@ -266,36 +266,31 @@ void bq79600_init(bq79600_t* instance, size_t n_devices, size_t n_cells_per_devi
 
 void bq79600_balance(bq79600_t* instance, uint16_t cell_mask) {
   uint8_t buf;
-  for (uint8_t i = 0; i < 16; i++) {
-    if (cell_mask & (1 << i)) {
-      // Balance for 10s
-      buf = 0x01;
-      bq79600_construct_command(instance, STACK_WRITE, 0, CB_CELL1_CTRL - i, 1, &buf);
-      bq79600_tx(instance);
-      HAL_Delay(1);
-    }
+  for (uint8_t i = 0; i < 14; i++) {
+    buf = (cell_mask & (1 << i)) ? 0x01 : 0x00;  // 0x01 = balance 10s, 0x00 = don't balance
+    bq79600_construct_command(instance, STACK_WRITE, 0, CB_CELL1_CTRL - i, 1, &buf);
+    bq79600_tx(instance);
+    HAL_Delay(1);
   }
-  buf = 0x1;
-  bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
-  bq79600_tx(instance);
-  HAL_Delay(1);
-
-  buf = 0x11;
-  bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
-  bq79600_tx(instance);
-  HAL_Delay(1);
 }
 
 void bq79600_balance_on(bq79600_t* instance) {
-  uint8_t buf = 0x13;
+  // FLTSTOP_EN=1, OTCB_EN=1, BAL_ACT=00, BAL_GO=1, AUTO_BAL=1
+  uint8_t buf = 0x33;
   bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
-
 }
 
 void bq79600_balance_off(bq79600_t* instance) {
-  uint8_t buf = 0x11;
+  // Clear all CB_CELLn_CTRL 0, resend BAL_GO=1 
+  uint8_t buf = 0x00;
+  for (uint8_t i = 0; i < 14; i++) {
+    bq79600_construct_command(instance, STACK_WRITE, 0, CB_CELL1_CTRL - i, 1, &buf);
+    bq79600_tx(instance);
+    HAL_Delay(1);
+  }
+  buf = 0x33;
   bq79600_construct_command(instance, STACK_WRITE, 0, BAL_CTRL2, 1, &buf);
   bq79600_tx(instance);
   HAL_Delay(1);
