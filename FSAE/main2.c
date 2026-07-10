@@ -1,4 +1,5 @@
 #include "SEGGER_RTT.h"
+#include "can_addr_def.h"
 #include "bq79600.h"
 #include "bq79600_def.h"
 #include "bq79616_def.h"
@@ -11,7 +12,6 @@
 #define n_devices 2
 #define n_cells_per_device 14
 #define n_temp_pre_device 7
-#define BAL_TRIGGER_CAN_ID 0x88  // this ID for balance 
 
 typedef struct {
   float temperature[n_temp_pre_device];  // degC
@@ -40,7 +40,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   CAN_RxHeaderTypeDef rxHeader;
   uint8_t rxData[8];
   if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &rxHeader, rxData) == HAL_OK) {
-    if (rxHeader.IDE == CAN_ID_STD && rxHeader.StdId == BAL_TRIGGER_CAN_ID) {
+    if (rxHeader.IDE == CAN_ID_STD && rxHeader.StdId == CA_BAL_TRIG) {
       can_balance_trigger = 1;
     }
   }
@@ -80,7 +80,7 @@ int main2(void) {
   canFilter.FilterBank = 0;
   canFilter.FilterMode = CAN_FILTERMODE_IDMASK;
   canFilter.FilterScale = CAN_FILTERSCALE_32BIT;
-  canFilter.FilterIdHigh = (BAL_TRIGGER_CAN_ID << 5) & 0xFFFF;  // 標準 ID 精確比對
+  canFilter.FilterIdHigh = (CA_BAL_TRIG << 5) & 0xFFFF;  // 標準 ID 精確比對
   canFilter.FilterIdLow = 0x0000;
   canFilter.FilterMaskIdHigh = 0xFFE0;
   canFilter.FilterMaskIdLow = 0x0000;
@@ -98,7 +98,7 @@ int main2(void) {
     /* CAN Flag trigger balance */
     if (can_balance_trigger) {
       can_balance_trigger = 0;
-      SEGGER_RTT_printf(0, "[CAN] 0x%02X received, start balancing.\n", BAL_TRIGGER_CAN_ID);
+      SEGGER_RTT_printf(0, "[CAN] 0x%02X received, start balancing.\n", CA_BAL_TRIG);
       bq79600_balance(bms_instance, 0x3FFF);
       bq79600_balance_on(bms_instance);
     }

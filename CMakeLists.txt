@@ -38,6 +38,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(SEGGER_RTT)
 add_subdirectory(BQ79600)
 add_subdirectory(FSAE)
+add_subdirectory(CAN_ADDR)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -70,4 +71,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     segger_rtt
     BQ79600
     FSAE
+    can_addr
 )
