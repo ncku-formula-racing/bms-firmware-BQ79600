@@ -9,7 +9,7 @@
 #include "usart.h"
 #include "utils.h"
 
-#define n_devices 2
+#define n_devices 3
 #define n_cells_per_device 14
 #define n_temp_pre_device 7
 
@@ -194,35 +194,32 @@ int main2(void) {
     if (bms_instance->fault) comm_fault = 1;
     for (int i = 0; i < n_devices - 1; i++) modules[i].bal_stat = bms_instance->rx_buf[4 + i * 7];
 
-    /* 7. Print — RTT 不支援 %f，浮點轉整數印 */
+    /* 7. Print — RTT 不支援 %f，浮點轉整數印。每個 slave 只印 V/T 極值與總電壓 + OK 狀態 */
     for (int i = 0; i < n_devices - 1; i++) {
-      SEGGER_RTT_printf(0, "\n[Dev %d | t=%lu ms]\n", i, modules[i].timestamp);
-
-      int d_i = (int)modules[i].dietemp;
-      int d_f = (int)((modules[i].dietemp - d_i) * 100);
-      SEGGER_RTT_printf(0, "  DieTmp : %d.%02d C\n", d_i, d_f);
-
-      int j = n_cells_per_device;
-      while (j--) {
-        int v_i = (int)modules[i].vcells[j];
-        int v_f = (int)((modules[i].vcells[j] - v_i) * 100);
-        SEGGER_RTT_printf(0, "  V[%02d]  : %d.%02d mV\n", j + 1, v_i, v_f);
+      float v_max = modules[i].vcells[0], v_min = modules[i].vcells[0], v_sum = 0.0f;
+      for (int j = 0; j < n_cells_per_device; j++) {
+        float v = modules[i].vcells[j];
+        v_sum += v;
+        if (v > v_max) v_max = v;
+        if (v < v_min) v_min = v;
       }
 
-      for (int j = 0; j < n_temp_pre_device; j++) {
-        int t_i = (int)modules[i].temperature[j];
-        SEGGER_RTT_printf(0, "  GPIO[%d] : %d degC\n", j + 1, t_i);
+      float t_max = modules[i].temperature[0], t_min = modules[i].temperature[0];
+      for (int j = 1; j < n_temp_pre_device; j++) {
+        float t = modules[i].temperature[j];
+        if (t > t_max) t_max = t;
+        if (t < t_min) t_min = t;
       }
 
-      if (modules[i].fault_summary) {
-        SEGGER_RTT_printf(0, "  [FAULT] summary=0x%02X\n", modules[i].fault_summary);
-        SEGGER_RTT_printf(0, "         OV=0x%02X%02X UV=0x%02X%02X OT=0x%02X UT=0x%02X\n",
-                          modules[i].fault_ov[0], modules[i].fault_ov[1], modules[i].fault_uv[0],
-                          modules[i].fault_uv[1], modules[i].fault_ot, modules[i].fault_ut);
-      } else {
-        SEGGER_RTT_printf(0, "  [OK]\n");
-      }
-      SEGGER_RTT_printf(0, "Balancing status: 0x%02X\n", modules[i].bal_stat);
+      int vmax_i = (int)v_max, vmax_f = (int)((v_max - vmax_i) * 100);
+      int vmin_i = (int)v_min, vmin_f = (int)((v_min - vmin_i) * 100);
+      int vsum_i = (int)v_sum, vsum_f = (int)((v_sum - vsum_i) * 100);
+
+      SEGGER_RTT_printf(0, "\n[Slave %d | t=%lu ms] %s\n", i, modules[i].timestamp,
+                         modules[i].fault_summary ? "FAULT" : "OK");
+      SEGGER_RTT_printf(0, "  Vmax=%d.%02d mV  Vmin=%d.%02d mV  Vsum=%d.%02d mV\n", vmax_i, vmax_f, vmin_i,
+                         vmin_f, vsum_i, vsum_f);
+      SEGGER_RTT_printf(0, "  Tmax=%d degC  Tmin=%d degC\n", (int)t_max, (int)t_min);
     }
 
     HAL_Delay(50);
