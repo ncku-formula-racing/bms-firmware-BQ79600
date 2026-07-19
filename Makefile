@@ -14,7 +14,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 flash:
-	@-pyocd flash -t $(TARGET) $(BUILD_DIR)/bms-master.elf
+	@-pyocd flash -t $(TARGET) $(BUILD_DIR)/debug/bms-master.elf
 
 monitor:
 	@-pyocd rtt -t $(TARGET) -a $(RTT_ADDR)

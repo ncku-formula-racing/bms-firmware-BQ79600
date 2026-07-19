@@ -9,7 +9,7 @@
 #include "usart.h"
 #include "utils.h"
 
-#define n_devices 3
+#define n_devices 11
 #define n_cells_per_device 14
 #define n_temp_pre_device 7
 
@@ -68,6 +68,12 @@ int main2(void) {
   bq79600_error_t err = bq79600_auto_addressing(bms_instance, n_devices);
   if (err) {
     SEGGER_RTT_printf(0, "[BQ79600] Auto addressing failed.\n");
+    /* CONTROL1[GOTO_SHUTDOWN]=1 broadcast puts every device already woken up
+     * (addressed or not) back into SHUTDOWN, so LED_PWR (D15) on each board
+     * turns off instead of staying lit from the aborted init. */
+    uint8_t goto_shutdown = 0x08;
+    bq79600_construct_command(bms_instance, BROADCAST_WRITE, 0, CONTROL1, 1, &goto_shutdown);
+    bq79600_tx(bms_instance);
     while (1);
   }
 
