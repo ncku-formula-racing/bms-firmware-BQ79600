@@ -221,11 +221,9 @@ int main2(void) {
       int vmin_i = (int)v_min, vmin_f = (int)((v_min - vmin_i) * 100);
       int vsum_i = (int)v_sum, vsum_f = (int)((v_sum - vsum_i) * 100);
 
-      SEGGER_RTT_printf(0, "\n[Slave %d | t=%lu ms] %s\n", i, modules[i].timestamp,
-                         modules[i].fault_summary ? "FAULT" : "OK");
-      SEGGER_RTT_printf(0, "  Vmax=%d.%02d mV  Vmin=%d.%02d mV  Vsum=%d.%02d mV\n", vmax_i, vmax_f, vmin_i,
-                         vmin_f, vsum_i, vsum_f);
-      SEGGER_RTT_printf(0, "  Tmax=%d degC  Tmin=%d degC\n", (int)t_max, (int)t_min);
+      SEGGER_RTT_printf(0, "[Slave %d] Vmax=%d.%02d Vmin=%d.%02d Vsum=%d.%02d Tmax=%d Tmin=%d FLT=0x%02X\n", i,
+                         vmax_i, vmax_f, vmin_i, vmin_f, vsum_i, vsum_f, (int)t_max, (int)t_min,
+                         modules[i].fault_summary);
     }
 
     HAL_Delay(50);
